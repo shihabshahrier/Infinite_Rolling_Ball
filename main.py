@@ -3,13 +3,34 @@ from OpenGL.GLUT import *
 from OpenGL.GLU import *
 import time
 import math
-import random as r
+import random as rand
+import os
 
 
 HEIGHT, WIDTH = 800, 1000
 BACKGROUND_COLOR = (0.0, 0.0, 0.0, 0.0)
-VEL = 20
+BACKGROUND_COLORs = {
+    "black": (0.0, 0.0, 0.0, 0.0),
+    "white": (1.0, 1.0, 1.0, 0.0),
+    "red": (1.0, 0.0, 0.0, 0.0),
+    "green": (0.0, 1.0, 0.0, 0.0),
+    "blue": (0.0, 0.0, 1.0, 0.0),
+    "yellow": (1.0, 1.0, 0.0, 0.0),
+    "cyan": (0.0, 1.0, 1.0, 0.0),
+    "magenta": (1.0, 0.0, 1.0, 0.0),
+    "gray": (0.5, 0.5, 0.5, 0.0),
+}
+
+# diffrent shades of white from 1.0 to 0.0 in a list
+WHITECOLORS3f = [(i / 10, i / 10, i / 10) for i in range(10, 0, -1)]
+
+
+VEL = 10
 x_VEL = 5
+ANGULAR_VEL = 5
+PLAY = True
+EXIT_GAME = False
+DAY = True
 
 
 COLORS3f = {
@@ -147,7 +168,7 @@ def midPointLine(x1, y1, x2, y2, size):
 def drawPolygon(x1, y1, x2, y2, x3, y3, x4, y4, size):
     midPointLine(x1, y1, x2, y2, size)
     midPointLine(x2, y2, x3, y3, size)
-    midPointLine(x3, y3, x4, y4, size)
+    midPointLine(x4, y4, x3, y3, size)
     midPointLine(x4, y4, x1, y1, size)
 
 
@@ -158,42 +179,143 @@ def drawSolidPolygon(x1, y1, x2, y2, x3, y3, x4, y4, size):
         x2 += 1
 
 
-def drawBall(xc, yc, r, pix):
+def drawBall(xc, yc, r, pix, cross=False):
     x = r
     while x > 0:
         midPointCircle(xc, yc, x, pix, "fullcircle")
         x -= 1
+    if cross:
+        glColor3f(0.1, 0.1, 0.1)
+        midPointLine(xc - r, yc, xc + r, yc, 2)
 
-    glColor3f(0.1, 0.1, 0.1)
-    midPointLine(xc - r, yc, xc + r, yc, 2)
+
+def spiralBall(xc, yc, r, pix):
+    x = r
+    while x > 0:
+        midPointCircle(xc, yc, x, pix, "fullcircle")
+        x -= 1
+    glColor3f(*COLORS3f["red"])
+    p = 2
+    midPointLine(xc, yc, xc, yc + r, p)
+    midPointLine(xc, yc - r, xc, yc, p)
+    midPointLine(xc, yc, xc + r, yc, p)
+    midPointLine(xc, yc, xc - r, yc, p)
+    midPointLine(xc, yc, xc + r, yc + r, p)
+    midPointLine(xc, yc, xc + r, yc - r, p)
+    midPointLine(xc, yc, xc - r, yc + r, p)
+    midPointLine(xc, yc, xc - r, yc - r, p)
+
+
+# ************************   buttons  ************************
+
+
+def drawLeftArrow(size):
+    drawPolygon(50, 700, 50, 750, 100, 750, 100, 700, size)
+
+    # arrow inside box
+    midPointLine(60, 725, 90, 740, size)
+    midPointLine(60, 725, 90, 710, size)
+
+
+def cross(size):
+    drawPolygon(900, 700, 900, 750, 950, 750, 950, 700, size)
+
+    # cross inside box
+    midPointLine(910, 710, 940, 740, size)
+    midPointLine(910, 740, 940, 710, size)
+
+
+def play(size):
+    drawPolygon(800, 700, 800, 750, 850, 750, 850, 700, size)
+
+    # play inside box
+
+    midPointLine(810, 710, 810, 740, size)
+    midPointLine(810, 740, 840, 725, size)
+    midPointLine(810, 710, 840, 725, size)
+
+
+def pause(size):
+    drawPolygon(800, 700, 800, 750, 850, 750, 850, 700, size)
+    # pause inside box
+    midPointLine(815, 710, 815, 740, size)
+    midPointLine(835, 710, 835, 740, size)
 
 
 class Obstacle:
-    def __init__(self, x, y, width, height):
+    def __init__(self, x, y, width, height, type):
         self.x = x
         self.y = y
         self.width = width
         self.height = height
+        self.type = type
+        self.angle = 0
 
     def draw(self):
-        drawSolidPolygon(
-            self.x,
-            self.y,
-            self.x,
-            self.y + self.height,
-            self.x + self.width,
-            self.y + self.height,
-            self.x + self.width,
-            self.y,
-            1,
-        )
+        if self.type == "rectangle":
+            drawSolidPolygon(
+                self.x,
+                self.y,
+                self.x,
+                self.y + self.height,
+                self.x + self.width,
+                self.y + self.height,
+                self.x + self.width,
+                self.y,
+                1,
+            )
+        if self.type == "spninig_rect" or self.type == "spninig_gear":
+            center_x = self.x + self.width / 2
+            center_y = self.y + self.height / 2
+            radius = self.width / 2
+
+            # Apply rotation
+            glPushMatrix()
+            glTranslatef(center_x, center_y, 0)
+            glRotatef(self.angle, 0, 0, 1)
+            glTranslatef(-center_x, -center_y, 0)
+
+            if self.type == "spninig_rect":
+                drawSolidPolygon(
+                    self.x,
+                    self.y,
+                    self.x,
+                    self.y + self.height,
+                    self.x + self.width,
+                    self.y + self.height,
+                    self.x + self.width,
+                    self.y,
+                    1,
+                )
+            elif self.type == "spninig_gear":
+                spiralBall(self.x + self.width / 2, self.y + self.height / 2, radius, 1)
+
+            # Reset transformation
+            glPopMatrix()
 
     def update(self):
         self.x -= VEL
+        if self.type == "spninig_rect" or self.type == "spninig_gear":
+            self.angle += ANGULAR_VEL
         self.draw()
 
 
-obstacle = Obstacle(1000, 100, 50, 50)
+# obstacle1 = Obstacle(1000, 100, 50, 50, "spninig_rect")
+# obstacle2 = Obstacle(1000, 100, 50, 50, "rectangle")
+# obstacle3 = Obstacle(1000, 125, 25, 25, "spninig_gear")
+# obstacle4 = Obstacle(1000, 120, 25, 25, "rectangle")
+# obstacle5 = Obstacle(1000, 120, 25, 25, "spninig_rect")
+
+# OBSTACLES = [obstacle1, obstacle2, obstacle3, obstacle4, obstacle5]
+OBSTACLES = []
+
+for i in range(10):
+    x = 1000
+    y = rand.randint(100, 200)
+    width = rand.randint(25, 50)
+    height = rand.randint(25, 50)
+    typ = rand.choice(["rectangle", "spninig_rect", "spninig_gear"])
+    OBSTACLES.append(Obstacle(x, y, width, height, typ))
 
 
 class Character:
@@ -219,10 +341,19 @@ class Character:
         glRotatef(self.angle, 0, 0, 1)  # Rotate around z-axis
         glTranslatef(-center_x, -center_y, 0)
 
-        drawBall(center_x, center_y, radius, 1)
+        drawBall(center_x, center_y, radius, 1, True)
 
         # Reset transformation
         glPopMatrix()
+
+    def checkCollision(self, obstacle):
+        if self.x + self.width >= obstacle.x and self.x <= obstacle.x + obstacle.width:
+            if (
+                self.y + self.height >= obstacle.y
+                and self.y <= obstacle.y + obstacle.height
+            ):
+                return True
+        return False
 
     def update(self):
         if self.x > WIDTH - 600:
@@ -283,10 +414,118 @@ class Stipes:
 stripes = Stipes(0, 0, 1000, 100)
 
 
-def keyboard(key, x, y):
-    if key == b" ":
+class SunMoon:
+    def __init__(self, x, y, radius):
+        self.x = x
+        self.y = y
+        self.radius = radius
+        self.angle = 0
+
+        self.glowx = self.x + self.radius / 2
+        self.glowy = self.y + self.radius / 2
+        self.glowradius = self.radius / 2
+
+    def draw(self):
+        center_x = self.x + self.radius / 2
+        center_y = self.y + self.radius / 2
+        radius = self.radius / 2
+
+        # Apply rotation
+        glPushMatrix()
+        glTranslatef(center_x, center_y, 0)
+        glRotatef(self.angle, 0, 0, 1)  # Rotate around z-axis
+        glTranslatef(-center_x, -center_y, 0)
+
+        drawBall(center_x, center_y, radius, 1)
+
+        # Reset transformation
+        glPopMatrix()
+
+    def glow(self):
+        # random white glow
+        glColor3f(*rand.choice(WHITECOLORS3f))
+
+        midPointCircle(self.glowx, self.glowy, self.glowradius - 10, 1, "fullcircle")
+        midPointCircle(self.glowx, self.glowy, self.glowradius, 1, "fullcircle")
+        midPointCircle(self.glowx, self.glowy, self.glowradius + 10, 1, "fullcircle")
+        midPointCircle(self.glowx, self.glowy, self.glowradius + 25, 1, "fullcircle")
+
+    def update(self):
+        self.draw()
+        self.glow()
+        self.angle += 1
+        self.glowradius += 1
+        if self.glowradius >= self.radius:
+            self.glowradius = self.radius / 2
+
+
+SUN = SunMoon(400, 600, 100)
+
+
+def reSet():
+    global character, obstacle_on_screen, curr_time
+    character = Character(100, 100, 50, 50)
+    obstacle_on_screen = []
+    curr_time = time.time()
+
+
+def keyboardEvent(key, x, y):
+    if key == b" " and not character.jump and PLAY:
         character.jump = True
         print("############ ")
+    if key == b"\x1b":  # escape key
+        os._exit(0)
+
+
+def mouseEvent(button, state, x, y):
+    global PLAY, EXIT_GAME
+    if button == GLUT_LEFT_BUTTON and state == GLUT_DOWN:
+        if 50 <= x <= 100 and 700 <= HEIGHT - y <= 750:
+            print("Left Arrow")
+            reSet()
+        elif 800 <= x <= 850 and 700 <= HEIGHT - y <= 750:
+            print("Play")
+            PLAY = not PLAY
+        elif 900 <= x <= 950 and 700 <= HEIGHT - y <= 750:
+            print("Exit")
+            os._exit(0)
+
+
+obstacle_on_screen = []
+curr_time = time.time()
+
+
+def gamePlay():
+    global curr_time
+    glColor3f(*COLORS3f["gray"])
+    drawSolidPolygon(0, 0, 0, 100, 1000, 100, 1000, 0, 1)
+
+    glColor3f(*COLORS3f["white"])
+    stripes.update()
+
+    glColor3f(*COLORS3f["green"])
+    character.update()
+
+    glColor3f(*COLORS3f["red"])
+
+    # create random obstacles from obstacles list after every 2 seconds
+
+    if time.time() - curr_time >= 3:
+        curr_time = time.time()
+        if rand.random() < 0.5:
+            obs = rand.choice(OBSTACLES)
+            obstacle_on_screen.append(obs)
+
+    # update obstacles
+    for ob in obstacle_on_screen:
+        if character.checkCollision(ob):
+            print("Game Over")
+            os._exit(0)
+        if ob.x < -100:
+            ob.x = rand.randint(1000, 1500)
+            ob.y = rand.randint(100, 200)
+            obstacle_on_screen.remove(ob)
+        ob.update()
 
 
 def iterate():
@@ -305,20 +544,36 @@ def showScreen():
     glLoadIdentity()
     iterate()
 
-    glColor3f(*COLORS3f["gray"])
-    # midPointCircle(250, 250, 100, 1, "fullcircle")
-    # drawPolygon(0, 0, 0, 100, 1000, 100, 1000, 0, 1)
-    drawSolidPolygon(0, 0, 0, 100, 1000, 100, 1000, 0, 1)
-
     glColor3f(*COLORS3f["red"])
-    obstacle.update()
+    cross(2)
 
-    glColor3f(*COLORS3f["green"])
-    character.update()
+    if PLAY:
+        glColor3f(*COLORS3f["green"])
+        pause(2)
+    else:
+        glColor3f(*COLORS3f["yellow"])
+        play(2)
 
     glColor3f(*COLORS3f["white"])
-    stripes.update()
-    
+    drawLeftArrow(2)
+
+    if PLAY:
+        gamePlay()
+    else:
+        glColor3f(*COLORS3f["gray"])
+        drawSolidPolygon(0, 0, 0, 100, 1000, 100, 1000, 0, 1)
+        glColor3f(*COLORS3f["white"])
+        stripes.draw()
+        glColor3f(*COLORS3f["green"])
+        character.draw()
+        glColor3f(*COLORS3f["red"])
+        for ob in obstacle_on_screen:
+            ob.draw()
+
+    if DAY:
+        glColor3f(*COLORS3f["yellow"])
+        SUN.update()
+
     glutSwapBuffers()
 
 
@@ -331,7 +586,8 @@ def main():
     wind = glutCreateWindow(b"Task 01")  # window name
 
     glutDisplayFunc(showScreen)
-    glutKeyboardFunc(keyboard)
+    glutKeyboardFunc(keyboardEvent)
+    glutMouseFunc(mouseEvent)
 
     glutIdleFunc(showScreen)
 
