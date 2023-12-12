@@ -1,3 +1,4 @@
+from OpenGL.GL import *
 
 COLORS3f = {
     "red": (1.0, 0.0, 0.0),
