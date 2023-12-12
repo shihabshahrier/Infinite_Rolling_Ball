@@ -516,16 +516,12 @@ def mouseEvent(button, state, x, y):
     global PLAY, DAY
     if button == GLUT_LEFT_BUTTON and state == GLUT_DOWN:
         if 50 <= x <= 100 and 700 <= HEIGHT - y <= 750:
-            print("Left Arrow")
             reSet()
         elif 800 <= x <= 850 and 700 <= HEIGHT - y <= 750:
-            print("Play")
             PLAY = not PLAY
         elif 900 <= x <= 950 and 700 <= HEIGHT - y <= 750:
-            print("Exit")
             os._exit(0)
         elif 50 <= x <= 100 and 600 <= HEIGHT - y <= 650:
-            print("Day")
             DAY = not DAY
 
 
@@ -534,7 +530,10 @@ obstacle_on_screen = [rand.choice(OBSTACLES)]
 
 def gamePlay():
     global SCORE, PLAY, VEL, ANGULAR_VEL, DAY, CURRENT_TIME
-    glColor3f(*COLORS3f["gray"])
+    if DAY:
+        glColor3f(*COLORS3f["gray"])
+    else:
+        glColor3f(*COLORS3f["darkgray"])
     drawSolidPolygon(0, 0, 0, 100, 1000, 100, 1000, 0, 1)
 
     glColor3f(*COLORS3f["white"])
@@ -592,8 +591,6 @@ def showScreen():
     glLoadIdentity()
     iterate()
 
-    CURRENT_TIME = time.time()
-
     glColor3f(*COLORS3f["red"])
     cross(2)
 
@@ -608,6 +605,7 @@ def showScreen():
     drawLeftArrow(2)
 
     if PLAY:
+        CURRENT_TIME = time.time()
         gamePlay()
         if DAY:
             glColor3f(*COLORS3f["black"])
