@@ -19,17 +19,20 @@ BACKGROUND_COLORs = {
     "cyan": (0.0, 1.0, 1.0, 0.0),
     "magenta": (1.0, 0.0, 1.0, 0.0),
     "gray": (0.5, 0.5, 0.5, 0.0),
+    "skyblue": (0.529, 0.808, 0.922, 0.0),
+    "nightblue": (0.0, 0.0, 0.2, 0.0),
 }
 
-# diffrent shades of white from 1.0 to 0.0 in a list
-WHITECOLORS3f = [(i / 10, i / 10, i / 10) for i in range(10, 0, -1)]
+SCORE = 0
+# 3 shades of white
+WHITECOLORS3f = [(1.0, 1.0, 1.0), (0.9, 0.9, 0.9), (0.8, 0.8, 0.8)]
 
 
 VEL = 10
 x_VEL = 5
 ANGULAR_VEL = 5
 PLAY = True
-EXIT_GAME = False
+GAME_OVER = False
 DAY = True
 
 
@@ -184,8 +187,12 @@ def drawBall(xc, yc, r, pix, cross=False):
     while x > 0:
         midPointCircle(xc, yc, x, pix, "fullcircle")
         x -= 1
+    x = r
+    while x > 0:
+        midPointCircle(xc, yc, x, 1.5, "halfcircleUp")
+        x -= 2
     if cross:
-        glColor3f(0.1, 0.1, 0.1)
+        glColor3f(*COLORS3f["white"])
         midPointLine(xc - r, yc, xc + r, yc, 2)
 
 
@@ -207,6 +214,20 @@ def spiralBall(xc, yc, r, pix):
 
 
 # ************************   buttons  ************************
+
+
+def dayTime(size):
+    drawPolygon(50, 600, 50, 650, 100, 650, 100, 600, size)
+    # sun inside box
+    glColor3f(*COLORS3f["yellow"])
+    drawBall(75, 625, 15, size)
+
+
+def nightTime(size):
+    drawPolygon(50, 600, 50, 650, 100, 650, 100, 600, size)
+    # moon inside box
+    glColor3f(*COLORS3f["white"])
+    drawBall(75, 625, 15, size)
 
 
 def drawLeftArrow(size):
@@ -415,11 +436,12 @@ stripes = Stipes(0, 0, 1000, 100)
 
 
 class SunMoon:
-    def __init__(self, x, y, radius):
+    def __init__(self, x, y, radius, typ):
         self.x = x
         self.y = y
         self.radius = radius
         self.angle = 0
+        self.typ = typ
 
         self.glowx = self.x + self.radius / 2
         self.glowy = self.y + self.radius / 2
@@ -445,21 +467,28 @@ class SunMoon:
         # random white glow
         glColor3f(*rand.choice(WHITECOLORS3f))
 
-        midPointCircle(self.glowx, self.glowy, self.glowradius - 10, 1, "fullcircle")
+        midPointCircle(self.glowx, self.glowy, self.glowradius - 40, 1, "fullcircle")
+        midPointCircle(self.glowx, self.glowy, self.glowradius - 20, 1, "fullcircle")
         midPointCircle(self.glowx, self.glowy, self.glowradius, 1, "fullcircle")
-        midPointCircle(self.glowx, self.glowy, self.glowradius + 10, 1, "fullcircle")
-        midPointCircle(self.glowx, self.glowy, self.glowradius + 25, 1, "fullcircle")
+        midPointCircle(self.glowx, self.glowy, self.glowradius + 20, 1, "fullcircle")
+        midPointCircle(self.glowx, self.glowy, self.glowradius + 40, 1, "fullcircle")
 
     def update(self):
-        self.draw()
         self.glow()
+        if self.typ == "sun":
+            glColor3f(*COLORS3f["yellow"])
+            self.draw()
+        else:
+            glColor3f(*COLORS3f["white"])
+            self.draw()
         self.angle += 1
         self.glowradius += 1
         if self.glowradius >= self.radius:
             self.glowradius = self.radius / 2
 
 
-SUN = SunMoon(400, 600, 100)
+SUN = SunMoon(400, 600, 100, "sun")
+MOON = SunMoon(400, 600, 100, "moon")
 
 
 def reSet():
@@ -467,6 +496,10 @@ def reSet():
     character = Character(100, 100, 50, 50)
     obstacle_on_screen = []
     curr_time = time.time()
+    SCORE = 0
+
+
+# ************************   KeyBoard / Mouse Events  ************************
 
 
 def keyboardEvent(key, x, y):
@@ -478,7 +511,7 @@ def keyboardEvent(key, x, y):
 
 
 def mouseEvent(button, state, x, y):
-    global PLAY, EXIT_GAME
+    global PLAY, DAY
     if button == GLUT_LEFT_BUTTON and state == GLUT_DOWN:
         if 50 <= x <= 100 and 700 <= HEIGHT - y <= 750:
             print("Left Arrow")
@@ -489,6 +522,9 @@ def mouseEvent(button, state, x, y):
         elif 900 <= x <= 950 and 700 <= HEIGHT - y <= 750:
             print("Exit")
             os._exit(0)
+        elif 50 <= x <= 100 and 600 <= HEIGHT - y <= 650:
+            print("Day")
+            DAY = not DAY
 
 
 obstacle_on_screen = []
@@ -496,20 +532,21 @@ curr_time = time.time()
 
 
 def gamePlay():
-    global curr_time
+    global curr_time, SCORE, PLAY
     glColor3f(*COLORS3f["gray"])
     drawSolidPolygon(0, 0, 0, 100, 1000, 100, 1000, 0, 1)
 
     glColor3f(*COLORS3f["white"])
     stripes.update()
-
-    glColor3f(*COLORS3f["green"])
+    if DAY:
+        glColor3f(*COLORS3f["black"])
+    else:
+        glColor3f(*COLORS3f["cyan"])
     character.update()
 
     glColor3f(*COLORS3f["red"])
 
     # create random obstacles from obstacles list after every 2 seconds
-
     if time.time() - curr_time >= 3:
         curr_time = time.time()
         if rand.random() < 0.5:
@@ -520,11 +557,16 @@ def gamePlay():
     for ob in obstacle_on_screen:
         if character.checkCollision(ob):
             print("Game Over")
-            os._exit(0)
+            print("Score: ", SCORE)
+            PLAY = False
+            reSet()
+            time.sleep(5)
+            return
         if ob.x < -100:
             ob.x = rand.randint(1000, 1500)
             ob.y = rand.randint(100, 200)
             obstacle_on_screen.remove(ob)
+            SCORE += 1
         ob.update()
 
 
@@ -539,6 +581,11 @@ def iterate():
 
 def showScreen():
     global BACKGROUND_COLOR
+
+    if DAY:
+        BACKGROUND_COLOR = BACKGROUND_COLORs["skyblue"]
+    else:
+        BACKGROUND_COLOR = BACKGROUND_COLORs["nightblue"]
     glClearColor(*BACKGROUND_COLOR)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glLoadIdentity()
@@ -559,6 +606,18 @@ def showScreen():
 
     if PLAY:
         gamePlay()
+        if DAY:
+            glColor3f(*COLORS3f["black"])
+            nightTime(2)
+
+            glColor3f(*COLORS3f["yellow"])
+            SUN.update()
+        elif not DAY:
+            glColor3f(*COLORS3f["white"])
+            dayTime(2)
+
+            glColor3f(*COLORS3f["white"])
+            MOON.update()
     else:
         glColor3f(*COLORS3f["gray"])
         drawSolidPolygon(0, 0, 0, 100, 1000, 100, 1000, 0, 1)
@@ -570,9 +629,18 @@ def showScreen():
         for ob in obstacle_on_screen:
             ob.draw()
 
-    if DAY:
-        glColor3f(*COLORS3f["yellow"])
-        SUN.update()
+        if DAY:
+            glColor3f(*COLORS3f["black"])
+            nightTime(2)
+
+            glColor3f(*COLORS3f["yellow"])
+            SUN.draw()
+        elif not DAY:
+            glColor3f(*COLORS3f["white"])
+            dayTime(2)
+
+            glColor3f(*COLORS3f["white"])
+            MOON.draw()
 
     glutSwapBuffers()
 
@@ -583,7 +651,7 @@ def main():
     glutInitDisplayMode(GLUT_RGBA)
     glutInitWindowSize(WIDTH, HEIGHT)  # window size
     glutInitWindowPosition(0, 0)
-    wind = glutCreateWindow(b"Task 01")  # window name
+    wind = glutCreateWindow(b"Infinite Balling")  # window name
 
     glutDisplayFunc(showScreen)
     glutKeyboardFunc(keyboardEvent)
