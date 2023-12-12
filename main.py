@@ -34,6 +34,7 @@ ANGULAR_VEL = 5
 PLAY = True
 GAME_OVER = False
 DAY = True
+CURRENT_TIME = time.time()
 
 
 COLORS3f = {
@@ -496,6 +497,7 @@ def reSet():
     character = Character(100, 100, 50, 50)
     obstacle_on_screen = []
     curr_time = time.time()
+    PLAY = True
     SCORE = 0
 
 
@@ -527,12 +529,11 @@ def mouseEvent(button, state, x, y):
             DAY = not DAY
 
 
-obstacle_on_screen = []
-curr_time = time.time()
+obstacle_on_screen = [rand.choice(OBSTACLES)]
 
 
 def gamePlay():
-    global curr_time, SCORE, PLAY
+    global SCORE, PLAY, VEL, ANGULAR_VEL, DAY, CURRENT_TIME
     glColor3f(*COLORS3f["gray"])
     drawSolidPolygon(0, 0, 0, 100, 1000, 100, 1000, 0, 1)
 
@@ -547,11 +548,9 @@ def gamePlay():
     glColor3f(*COLORS3f["red"])
 
     # create random obstacles from obstacles list after every 2 seconds
-    if time.time() - curr_time >= 3:
-        curr_time = time.time()
-        if rand.random() < 0.5:
-            obs = rand.choice(OBSTACLES)
-            obstacle_on_screen.append(obs)
+    if time.time() - CURRENT_TIME >= 10:
+        obstacle_on_screen.append(rand.choice(OBSTACLES))
+        CURRENT_TIME = time.time()
 
     # update obstacles
     for ob in obstacle_on_screen:
@@ -563,10 +562,12 @@ def gamePlay():
             time.sleep(5)
             return
         if ob.x < -100:
-            ob.x = rand.randint(1000, 1500)
+            ob.x = rand.randint(1000, 1200)
             ob.y = rand.randint(100, 200)
             obstacle_on_screen.remove(ob)
             SCORE += 1
+            VEL += 0.2
+            ANGULAR_VEL += 0.2
         ob.update()
 
 
@@ -590,6 +591,8 @@ def showScreen():
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glLoadIdentity()
     iterate()
+
+    CURRENT_TIME = time.time()
 
     glColor3f(*COLORS3f["red"])
     cross(2)
@@ -618,6 +621,10 @@ def showScreen():
 
             glColor3f(*COLORS3f["white"])
             MOON.update()
+
+            for i in range(100):
+                glColor3f(*rand.choice(WHITECOLORS3f))
+                draw_points(rand.randint(10, 1000), rand.randint(300, 800), 1)
     else:
         glColor3f(*COLORS3f["gray"])
         drawSolidPolygon(0, 0, 0, 100, 1000, 100, 1000, 0, 1)
