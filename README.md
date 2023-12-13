@@ -6,7 +6,9 @@ This is a game where you control a ball and try to avoid obstacles. The ball is 
 ## How to play
 - Press `space` to jump
 - Press `esc` to quit
-- Press `RIGHT ARROW` to throw disc towards the obstacle
+- Press `s` to throw disc towards the obstacle
+- Press `Right Arrow` to move right
+- Press `Left Arrow` to move left
 - click pause button to pause the game
 - click play button to resume the game
 - click restart button to restart the game

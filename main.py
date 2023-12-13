@@ -572,20 +572,6 @@ SUN = SunMoon(400, 600, 100, "sun")
 MOON = SunMoon(400, 600, 100, "moon")
 
 
-def reSet():
-    global character, obstacle_on_screen, curr_time, PLAY, SCORE, VEL, ANGULAR_VEL, shooted_bullets
-    character = Character(150, 100, 50, 50)
-    obstacle_on_screen = []
-    curr_time = time.time()
-    PLAY = True
-    SCORE = 0
-    VEL = 10
-    ANGULAR_VEL = 5
-    shooted_bullets = []
-    character.bullets = 1
-    power_up.x = rand.randint(800, 1300)
-
-
 # ************************   KeyBoard / Mouse Events  ************************
 
 
@@ -595,10 +581,18 @@ def keyboardEvent(key, x, y):
     if key == b"\x1b":  # escape key
         os._exit(0)
 
-    if key == GLUT_KEY_RIGHT:
+    if key == b"s":
         if character.bullets > 0:
             character.bullets -= 1
             shooted_bullets.append(Bullet(character.x + 10, character.y + 20, 5, 5, 0))
+    if key == GLUT_KEY_LEFT:
+        if not character.jump:
+            if 150 <= character.x < 500:
+                character.x -= 20
+    if key == GLUT_KEY_RIGHT:
+        if not character.jump:
+            if 140 <= character.x < 500:
+                character.x += 20
 
 
 def mouseEvent(button, state, x, y):
@@ -615,6 +609,22 @@ def mouseEvent(button, state, x, y):
 
 
 obstacle_on_screen = [rand.choice(OBSTACLES)]
+
+
+def reSet():
+    global character, obstacle_on_screen, curr_time, PLAY, SCORE, VEL, ANGULAR_VEL, shooted_bullets, CURRENT_TIME
+    character = Character(150, 100, 50, 50)
+    curr_time = time.time()
+    PLAY = True
+    SCORE = 0
+    VEL = 10
+    ANGULAR_VEL = 5
+    shooted_bullets = []
+    character.bullets = 1
+    power_up.x = rand.randint(800, 1300)
+    for obs in OBSTACLES:
+        obs.x = rand.randint(1000, 1300)
+    obstacle_on_screen = []
 
 
 def gamePlay():
@@ -663,10 +673,10 @@ def gamePlay():
     if power_up.checkCollision(character):
         character.bullets += 2
         power_up.x = rand.randint(1100, 1300)
-        power_up.y = rand.randint(100, 200)
+        power_up.y = rand.randint(120, 190)
     if power_up.x < -100:
         power_up.x = rand.randint(1100, 1300)
-        power_up.y = rand.randint(100, 200)
+        power_up.y = rand.randint(120, 190)
 
     glColor3f(*(rand.random(), rand.random(), rand.random()))
     power_up.update()
