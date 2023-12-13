@@ -267,16 +267,16 @@ def pause(size):
 
 
 class Obstacle:
-    def __init__(self, x, y, width, height, type):
+    def __init__(self, x, y, width, height, typ):
         self.x = x
         self.y = y
         self.width = width
         self.height = height
-        self.type = type
+        self.typ = typ
         self.angle = 0
 
     def draw(self):
-        if self.type == "rectangle":
+        if self.typ == "rectangle":
             drawSolidPolygon(
                 self.x,
                 self.y,
@@ -288,7 +288,7 @@ class Obstacle:
                 self.y,
                 1,
             )
-        if self.type == "spninig_rect" or self.type == "spninig_gear":
+        if self.typ == "spninig_rect" or self.typ == "spninig_gear":
             center_x = self.x + self.width / 2
             center_y = self.y + self.height / 2
             radius = self.width / 2
@@ -299,7 +299,7 @@ class Obstacle:
             glRotatef(self.angle, 0, 0, 1)
             glTranslatef(-center_x, -center_y, 0)
 
-            if self.type == "spninig_rect":
+            if self.typ == "spninig_rect":
                 drawSolidPolygon(
                     self.x,
                     self.y,
@@ -311,16 +311,16 @@ class Obstacle:
                     self.y,
                     1,
                 )
-            elif self.type == "spninig_gear":
+            elif self.typ == "spninig_gear":
                 spiralBall(self.x + self.width / 2, self.y + self.height / 2, radius, 1)
 
             # Reset transformation
             glPopMatrix()
 
     def update(self):
-        self.x -= VEL
-        if self.type == "spninig_rect" or self.type == "spninig_gear":
+        if self.typ == "spninig_rect" or self.typ == "spninig_gear":
             self.angle += ANGULAR_VEL
+        self.x -= VEL
         self.draw()
 
 
@@ -334,8 +334,10 @@ class Obstacle:
 OBSTACLES = []
 
 for i in range(10):
-    x = 1000
-    y = rand.randint(100, 200)
+    x = rand.randint(1000, 1300)
+    y1 = rand.randint(100, 115)
+    y2 = rand.randint(180, 220)
+    y = rand.choice([y1, y2])
     width = rand.randint(25, 50)
     height = rand.randint(25, 50)
     typ = rand.choice(["rectangle", "spninig_rect", "spninig_gear"])
@@ -666,7 +668,7 @@ def gamePlay():
             ob.x = rand.randint(1100, 1200)
             y1 = rand.randint(100, 110)
             y2 = rand.randint(190, 220)
-            ob.y = rand.randchoice([y1, y2])
+            ob.y = rand.choice([y1, y2])
             obstacle_on_screen.remove(ob)
             SCORE += 1
             VEL += 0.2
@@ -698,6 +700,9 @@ def gamePlay():
         bullet.update()
         if bullet.x > WIDTH:
             shooted_bullets.remove(bullet)
+    for i in range(character.bullets):
+        glColor3f(*COLORS3f["magenta"])
+        drawBall(10 + i * 10, 10, 5, 1)
 
 
 def iterate():
