@@ -36,6 +36,8 @@ GAME_OVER = False
 DAY = True
 CURRENT_TIME = time.time()
 
+shooted_bullets = []
+
 
 COLORS3f = {
     "red": (1.0, 0.0, 0.0),
@@ -349,8 +351,8 @@ class Character:
         self.width, self.height = width, height
         self.jump = False
         self.fall = False
-
         self.angle = 0
+        self.bullets = 1
 
     def draw(self):
         center_x = self.x + self.width / 2
@@ -406,6 +408,81 @@ class Character:
 
 
 character = Character(100, 100, 50, 50)
+
+
+class PowerUp:
+    def __init__(self, x, y, radius):
+        self.x = x
+        self.y = y
+        self.radius = radius
+        self.angle = 0
+        self.radiusd = self.radius / 2
+
+    def draw(self):
+        # roatating circle
+        center_x = self.x + self.radius / 2
+        center_y = self.y + self.radius / 2
+
+        # Apply rotation
+        glPushMatrix()
+        glTranslatef(center_x, center_y, 0)
+        glRotatef(self.angle, 0, 0, 1)  # Rotate around z-axis
+        glTranslatef(-center_x, -center_y, 0)
+
+        midPointCircle(center_x, center_y, self.radiusd - 10, 1, "fullcircle")
+        midPointCircle(center_x, center_y, self.radiusd - 5, 1, "fullcircle")
+        midPointCircle(center_x, center_y, self.radiusd, 1, "fullcircle")
+        midPointCircle(center_x, center_y, self.radiusd + 10, 1, "fullcircle")
+
+        # Reset transformation
+        glPopMatrix()
+
+    def checkCollision(self, character):
+        if (
+            self.x + self.radius >= character.x
+            and self.x <= character.x + character.width
+        ):
+            if (
+                self.y + self.radius >= character.y
+                and self.y <= character.y + character.height
+            ):
+                return True
+        return False
+
+    def update(self):
+        self.draw()
+        self.radiusd += 1
+        self.angle += 1
+        if self.radiusd >= self.radius:
+            self.radiusd = self.radius / 2
+        self.x -= VEL
+
+
+power_up = PowerUp(1200, 125, 10)
+
+
+class Bullet:
+    def __init__(self, x, y, width, height, angle):
+        self.x = x
+        self.y = y
+        self.width, self.height = width, height
+
+    def draw(self):
+        glColor3f(*COLORS3f["magenta"])
+        drawBall(self.x, self.y, 5, 1)
+
+    def collision(self, obstacle):
+        if self.x + self.width >= obstacle.x and self.x <= obstacle.x + obstacle.width:
+            if (
+                self.y + self.height >= obstacle.y
+                and self.y <= obstacle.y + obstacle.height
+            ):
+                return True
+        return False
+
+    def update(self):
+        self.x += VEL
+        self.draw()
 
 
 class Stipes:
@@ -466,7 +543,10 @@ class SunMoon:
 
     def glow(self):
         # random white glow
-        glColor3f(*rand.choice(WHITECOLORS3f))
+        if self.typ == "moon":
+            glColor3f(*rand.choice(WHITECOLORS3f))
+        else:
+            glColor3f(*COLORS3f["yellow"])
 
         midPointCircle(self.glowx, self.glowy, self.glowradius - 40, 1, "fullcircle")
         midPointCircle(self.glowx, self.glowy, self.glowradius - 20, 1, "fullcircle")
@@ -493,12 +573,17 @@ MOON = SunMoon(400, 600, 100, "moon")
 
 
 def reSet():
-    global character, obstacle_on_screen, curr_time
+    global character, obstacle_on_screen, curr_time, PLAY, SCORE, VEL, ANGULAR_VEL, shooted_bullets
     character = Character(100, 100, 50, 50)
     obstacle_on_screen = []
     curr_time = time.time()
     PLAY = True
     SCORE = 0
+    VEL = 10
+    ANGULAR_VEL = 5
+    shooted_bullets = []
+    character.bullets = 1
+    power_up.x = rand.randint(800, 1300)
 
 
 # ************************   KeyBoard / Mouse Events  ************************
@@ -510,6 +595,11 @@ def keyboardEvent(key, x, y):
         print("############ ")
     if key == b"\x1b":  # escape key
         os._exit(0)
+
+    if key == GLUT_KEY_RIGHT:
+        if character.bullets > 0:
+            character.bullets -= 1
+            shooted_bullets.append(Bullet(character.x + 10, character.y + 20, 5, 5, 0))
 
 
 def mouseEvent(button, state, x, y):
@@ -556,18 +646,45 @@ def gamePlay():
         if character.checkCollision(ob):
             print("Game Over")
             print("Score: ", SCORE)
-            PLAY = False
             reSet()
             time.sleep(5)
-            return
+            break
         if ob.x < -100:
-            ob.x = rand.randint(1000, 1200)
-            ob.y = rand.randint(100, 200)
+            ob.x = rand.randint(1100, 1200)
+            y1 = rand.randint(100, 110)
+            y2 = rand.randint(190, 220)
+            ob.y = rand.randchoice([y1, y2])
             obstacle_on_screen.remove(ob)
             SCORE += 1
             VEL += 0.2
             ANGULAR_VEL += 0.2
         ob.update()
+
+    # update power up
+    if power_up.checkCollision(character):
+        character.bullets += 2
+        power_up.x = rand.randint(1100, 1300)
+        power_up.y = rand.randint(100, 200)
+    if power_up.x < -100:
+        power_up.x = rand.randint(1100, 1300)
+        power_up.y = rand.randint(100, 200)
+
+    glColor3f(*(rand.random(), rand.random(), rand.random()))
+    power_up.update()
+
+    # update bullets
+    for bullet in shooted_bullets:
+        for ob in obstacle_on_screen:
+            if bullet.collision(ob):
+                shooted_bullets.remove(bullet)
+                obstacle_on_screen.remove(ob)
+                SCORE += 1
+                VEL += 0.2
+                ANGULAR_VEL += 0.2
+                break
+        bullet.update()
+        if bullet.x > WIDTH:
+            shooted_bullets.remove(bullet)
 
 
 def iterate():
@@ -628,11 +745,15 @@ def showScreen():
         drawSolidPolygon(0, 0, 0, 100, 1000, 100, 1000, 0, 1)
         glColor3f(*COLORS3f["white"])
         stripes.draw()
-        glColor3f(*COLORS3f["green"])
-        character.draw()
         glColor3f(*COLORS3f["red"])
+        character.draw()
+
         for ob in obstacle_on_screen:
+            glColor3f(*COLORS3f["gray"])
             ob.draw()
+
+        glColor3f(*COLORS3f["white"])
+        power_up.draw()
 
         if DAY:
             glColor3f(*COLORS3f["black"])
@@ -660,6 +781,8 @@ def main():
 
     glutDisplayFunc(showScreen)
     glutKeyboardFunc(keyboardEvent)
+    glutSpecialFunc(keyboardEvent)
+
     glutMouseFunc(mouseEvent)
 
     glutIdleFunc(showScreen)
