@@ -576,23 +576,27 @@ MOON = SunMoon(400, 600, 100, "moon")
 
 
 def keyboardEvent(key, x, y):
-    if key == b" " and not character.jump and PLAY:
-        character.jump = True
     if key == b"\x1b":  # escape key
         os._exit(0)
 
-    if key == b"s":
-        if character.bullets > 0:
-            character.bullets -= 1
-            shooted_bullets.append(Bullet(character.x + 10, character.y + 20, 5, 5, 0))
-    if key == GLUT_KEY_LEFT:
-        if not character.jump:
-            if 150 <= character.x < 500:
-                character.x -= 20
-    if key == GLUT_KEY_RIGHT:
-        if not character.jump:
-            if 140 <= character.x < 500:
-                character.x += 20
+    if PLAY:
+        if key == b" " and not character.jump and PLAY:
+            character.jump = True
+
+        if key == b"s":
+            if character.bullets > 0:
+                character.bullets -= 1
+                shooted_bullets.append(
+                    Bullet(character.x + 10, character.y + 20, 5, 5, 0)
+                )
+        if key == GLUT_KEY_LEFT:
+            if not character.jump:
+                if 150 <= character.x < 500:
+                    character.x -= 20
+        if key == GLUT_KEY_RIGHT:
+            if not character.jump:
+                if 140 <= character.x < 500:
+                    character.x += 20
 
 
 def mouseEvent(button, state, x, y):
