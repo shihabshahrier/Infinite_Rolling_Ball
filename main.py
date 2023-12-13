@@ -592,7 +592,6 @@ def reSet():
 def keyboardEvent(key, x, y):
     if key == b" " and not character.jump and PLAY:
         character.jump = True
-        print("############ ")
     if key == b"\x1b":  # escape key
         os._exit(0)
 
