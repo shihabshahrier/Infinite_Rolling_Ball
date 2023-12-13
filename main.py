@@ -407,7 +407,7 @@ class Character:
         self.draw()
 
 
-character = Character(100, 100, 50, 50)
+character = Character(150, 100, 50, 50)
 
 
 class PowerUp:
@@ -548,10 +548,10 @@ class SunMoon:
         else:
             glColor3f(*COLORS3f["yellow"])
 
-        midPointCircle(self.glowx, self.glowy, self.glowradius - 40, 1, "fullcircle")
-        midPointCircle(self.glowx, self.glowy, self.glowradius - 20, 1, "fullcircle")
-        midPointCircle(self.glowx, self.glowy, self.glowradius, 1, "fullcircle")
-        midPointCircle(self.glowx, self.glowy, self.glowradius + 20, 1, "fullcircle")
+        midPointCircle(self.glowx, self.glowy, self.glowradius - 40, 5, "fullcircle")
+        midPointCircle(self.glowx, self.glowy, self.glowradius - 20, 4, "fullcircle")
+        midPointCircle(self.glowx, self.glowy, self.glowradius, 3, "fullcircle")
+        midPointCircle(self.glowx, self.glowy, self.glowradius + 20, 2, "fullcircle")
         midPointCircle(self.glowx, self.glowy, self.glowradius + 40, 1, "fullcircle")
 
     def update(self):
@@ -574,7 +574,7 @@ MOON = SunMoon(400, 600, 100, "moon")
 
 def reSet():
     global character, obstacle_on_screen, curr_time, PLAY, SCORE, VEL, ANGULAR_VEL, shooted_bullets
-    character = Character(100, 100, 50, 50)
+    character = Character(150, 100, 50, 50)
     obstacle_on_screen = []
     curr_time = time.time()
     PLAY = True
