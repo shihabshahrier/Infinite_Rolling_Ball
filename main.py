@@ -790,7 +790,7 @@ def main():
     glutInitDisplayMode(GLUT_RGBA)
     glutInitWindowSize(WIDTH, HEIGHT)  # window size
     glutInitWindowPosition(0, 0)
-    wind = glutCreateWindow(b"Infinite Balling")  # window name
+    wind = glutCreateWindow(b"Infinite Rolling Ball")  # window name
 
     glutDisplayFunc(showScreen)
     glutKeyboardFunc(keyboardEvent)
